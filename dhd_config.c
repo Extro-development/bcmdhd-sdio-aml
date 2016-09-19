@@ -172,6 +172,21 @@ const static char *bcm4356a2_pcie_ag_fw_name[] = {
 };
 #endif
 
+#define NVNAME_AP6181  "ap6181_nvram.txt"
+#define NVNAME_AP6210  "ap6210_nvram.txt"
+#define NVNAME_AP6212  "ap6212_nvram.txt"
+#define NVNAME_AP6330  "ap6330_nvram.txt"
+#define NVNAME_AP6354  "ap6354_nvram.txt"
+#define NVNAME_AP6356  "ap6356_nvram.txt"
+
+
+#define CFGFILE_AP6181  "ap6181_config.txt"
+#define CFGFILE_AP6210  "ap6210_config.txt"
+#define CFGFILE_AP6212  "ap6212_config.txt"
+#define CFGFILE_AP6330  "ap6330_config.txt"
+#define CFGFILE_AP6354  "ap6354_config.txt"
+#define CFGFILE_AP6356  "ap6356_config.txt"
+
 #define htod32(i) i
 #define htod16(i) i
 #define dtoh32(i) i
@@ -541,72 +556,125 @@ dhd_conf_set_fw_name_by_chip(dhd_pub_t *dhd, char *fw_path)
 void
 dhd_conf_set_nv_name_by_chip(dhd_pub_t *dhd, char *nv_path)
 {
-	int matched=-1;
-	uint chip, chiprev;
-	int i;
+    static uint chip, chiprev, first=1;
+    int i;
 
-	chip = dhd->conf->chip;
-	chiprev = dhd->conf->chiprev;
+    if (first) {
+        chip = dhd_bus_chip_id(dhd);
+        chiprev = dhd_bus_chiprev_id(dhd);
+        first = 0;
+    }
+    #ifndef FW_PATH_AUTO_SELECT
+        return;
+    #endif
 
-	for (i = 0;i < dhd->conf->nv_by_chip.count;i++) {
-		if (chip == dhd->conf->nv_by_chip.m_chip_nv_path_head[i].chip &&
-				chiprev==dhd->conf->nv_by_chip.m_chip_nv_path_head[i].chiprev) {
-			matched = i;
-			break;
-		}
-	}
-	if (matched < 0)
-		return;
-
-	if (nv_path[0] == '\0') {
-#ifdef CONFIG_BCMDHD_NVRAM_PATH
-		bcm_strncpy_s(nv_path, MOD_PARAM_PATHLEN-1, CONFIG_BCMDHD_NVRAM_PATH, MOD_PARAM_PATHLEN-1);
-		if (nv_path[0] == '\0')
-#endif
-		{
-			printf("nvram path is null\n");
-			return;
-		}
-	}
-
-	/* find out the last '/' */
-	i = strlen(nv_path);
-	while (i > 0) {
-		if (nv_path[i] == '/') break;
-		i--;
-	}
-
-	strcpy(&nv_path[i+1], dhd->conf->nv_by_chip.m_chip_nv_path_head[matched].name);
-
-	printf("%s: nvram_path=%s\n", __FUNCTION__, nv_path);
+    /* find out the last '/' */
+    i = strlen(nv_path);
+    while (i>0){
+        if (nv_path[i] == '/') break;
+        i--;
+    }
+    switch (chip) {
+        case BCM4330_CHIP_ID:
+            if (chiprev == BCM4330B2_CHIP_REV)
+            {
+                strcpy(&nv_path[i+1], NVNAME_AP6330);
+            }
+            else {
+                strcpy(&nv_path[i+1], NVNAME_AP6181);
+            }
+            break;
+        case BCM43430_CHIP_ID:
+            if (chiprev == BCM43430A0_CHIP_REV)
+                strcpy(&nv_path[i+1], NVNAME_AP6212);
+            break;
+        case BCM43362_CHIP_ID:
+            strcpy(&nv_path[i+1], NVNAME_AP6210);
+            break;
+        case BCM4354_CHIP_ID:
+            if (chiprev == BCM4354A1_CHIP_REV)
+                strcpy(&nv_path[i+1], NVNAME_AP6354);
+            else if (chiprev == BCM4356A2_CHIP_REV)
+                strcpy(&nv_path[i+1], NVNAME_AP6356);
+            break;
+    }
+    printf("nv_path=%s\n", nv_path);
 }
 
 void
 dhd_conf_set_conf_path_by_nv_path(dhd_pub_t *dhd, char *conf_path, char *nv_path)
 {
-	int i;
+    static uint chip, chiprev, first=1;
+    int i, path_set;
 
-	if (nv_path[0] == '\0') {
+    if (first) {
+        chip = dhd_bus_chip_id(dhd);
+        chiprev = dhd_bus_chiprev_id(dhd);
+        first = 0;
+    }
+
+    if (nv_path[0] == '\0') {
 #ifdef CONFIG_BCMDHD_NVRAM_PATH
-		bcm_strncpy_s(conf_path, MOD_PARAM_PATHLEN-1, CONFIG_BCMDHD_NVRAM_PATH, MOD_PARAM_PATHLEN-1);
-		if (nv_path[0] == '\0')
+        bcm_strncpy_s(conf_path, MOD_PARAM_PATHLEN-1, CONFIG_BCMDHD_NVRAM_PATH, MOD_PARAM_PATHLEN-1);
+        if (nv_path[0] == '\0')
 #endif
-		{
-			printf("nvram path is null\n");
-			return;
-		}
-	} else
-		strcpy(conf_path, nv_path);
+        {
+            printf("nvram path is null\n");
+            return;
+        }
+    } else
+        strcpy(conf_path, nv_path);
 
-	/* find out the last '/' */
-	i = strlen(conf_path);
-	while (i > 0) {
-		if (conf_path[i] == '/') break;
-		i--;
-	}
-	strcpy(&conf_path[i+1], "config.txt");
+    /* find out the last '/' */
+    i = strlen(conf_path);
+    while (i > 0) {
+        if (conf_path[i] == '/') break;
+        i--;
+    }
 
-	printf("%s: config_path=%s\n", __FUNCTION__, conf_path);
+    path_set = 0;
+
+    switch (chip) {
+        case BCM4330_CHIP_ID:
+            if (chiprev == BCM4330B2_CHIP_REV)
+            {
+                strcpy(&conf_path[i+1], CFGFILE_AP6330);
+                path_set = 1;
+            }
+            else {
+                strcpy(&conf_path[i+1], CFGFILE_AP6181);
+                path_set = 1;
+            }
+            break;
+        case BCM43430_CHIP_ID:
+            if (chiprev == BCM43430A0_CHIP_REV)
+            {
+                strcpy(&conf_path[i+1], CFGFILE_AP6212);
+                path_set = 1;
+            }
+            break;
+        case BCM43362_CHIP_ID:
+            strcpy(&conf_path[i+1], CFGFILE_AP6210);
+            path_set = 1;
+            break;
+        case BCM4354_CHIP_ID:
+            if (chiprev == BCM4354A1_CHIP_REV)
+            {
+                strcpy(&conf_path[i+1], CFGFILE_AP6354);
+                path_set = 1;
+            }
+            else if (chiprev == BCM4356A2_CHIP_REV) {
+                strcpy(&conf_path[i+1], CFGFILE_AP6356);
+                path_set = 1;
+            }
+            break;
+    }
+
+    if (path_set == 0) {
+        strcpy(&conf_path[i+1], "config.txt");
+    }
+
+    printf("%s: config_path=%s\n", __FUNCTION__, conf_path);
 }
 
 #ifdef CONFIG_PATH_AUTO_SELECT
