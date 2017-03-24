@@ -175,6 +175,7 @@ const static char *bcm4356a2_pcie_ag_fw_name[] = {
 #define NVNAME_AP6181  "ap6181_nvram.txt"
 #define NVNAME_AP6210  "ap6210_nvram.txt"
 #define NVNAME_AP6212  "ap6212_nvram.txt"
+#define NVNAME_AP6255  "ap6255_nvram.txt"
 #define NVNAME_AP6330  "ap6330_nvram.txt"
 #define NVNAME_AP6354  "ap6354_nvram.txt"
 #define NVNAME_AP6356  "ap6356_nvram.txt"
@@ -183,6 +184,7 @@ const static char *bcm4356a2_pcie_ag_fw_name[] = {
 #define CFGFILE_AP6181  "ap6181_config.txt"
 #define CFGFILE_AP6210  "ap6210_config.txt"
 #define CFGFILE_AP6212  "ap6212_config.txt"
+#define CFGFILE_AP6255  "ap6255_config.txt"
 #define CFGFILE_AP6330  "ap6330_config.txt"
 #define CFGFILE_AP6354  "ap6354_config.txt"
 #define CFGFILE_AP6356  "ap6356_config.txt"
@@ -588,6 +590,10 @@ dhd_conf_set_nv_name_by_chip(dhd_pub_t *dhd, char *nv_path)
             if (chiprev == BCM43430A0_CHIP_REV)
                 strcpy(&nv_path[i+1], NVNAME_AP6212);
             break;
+        case BCM43454_CHIP_ID:
+            if (chiprev == BCM43455C0_CHIP_REV)
+                strcpy(&nv_path[i+1], NVNAME_AP6255);
+            break;
         case BCM43362_CHIP_ID:
             strcpy(&nv_path[i+1], NVNAME_AP6210);
             break;
@@ -650,6 +656,13 @@ dhd_conf_set_conf_path_by_nv_path(dhd_pub_t *dhd, char *conf_path, char *nv_path
             if (chiprev == BCM43430A0_CHIP_REV)
             {
                 strcpy(&conf_path[i+1], CFGFILE_AP6212);
+                path_set = 1;
+            }
+            break;
+        case BCM43454_CHIP_ID:
+            if (chiprev == BCM43455C0_CHIP_REV)
+            {
+                strcpy(&conf_path[i+1], CFGFILE_AP6255);
                 path_set = 1;
             }
             break;
